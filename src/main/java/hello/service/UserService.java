@@ -1,6 +1,7 @@
 package hello.service;
 
 import hello.mapper.UserMapper;
+
 import javax.inject.Inject;
 
 public class UserService {
