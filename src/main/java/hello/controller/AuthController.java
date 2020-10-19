@@ -31,7 +31,7 @@ public class AuthController {
     @GetMapping("/auth")
     @ResponseBody
     public Object auth() {
-        return new Result("ok", "", false);
+        return new Result("ok", "用户未登录", false);
     }
 
     @PostMapping("/auth/login")
@@ -57,9 +57,7 @@ public class AuthController {
 
             User loggedUser = new User(1, "张三");
             System.out.println(loggedUser);
-            Result result = new Result("ok", "登录成功", true, loggedUser);
-            return result;
-
+            return new Result("ok", "登录成功", true, loggedUser);
         } catch (BadCredentialsException e) {
             //返回格式 {"status": "fail", "msg": "用户不存在"} 或者 {"status": "fail", "msg": "密码不正确"}
             return new Result("fail", "密码不正确", false);
@@ -91,7 +89,7 @@ public class AuthController {
             return msg;
         }
 
-        public boolean isLogin() {
+        public boolean getIsLogin() {
             return isLogin;
         }
 
