@@ -3,6 +3,7 @@ package hello.service;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -13,7 +14,7 @@ import javax.inject.Inject;
 
 @Service
 public class UserService implements UserDetailsService {
-    private Map<String, String> usernameAndPassword = new ConcurrentHashMap<>();
+    private Map<String, User> users = new ConcurrentHashMap<>();
     private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @Inject
@@ -23,22 +24,18 @@ public class UserService implements UserDetailsService {
     }
 
     public void save(String username, String password) {
-        usernameAndPassword.put(username, bCryptPasswordEncoder.encode(password));
+        users.put(username, new User(1, username, bCryptPasswordEncoder.encode(password)));
     }
 
-    public String getPassword(String username) {
-        return usernameAndPassword.get(username);
-    }
-
-    public User getUserById(Integer id) {
-        return null;
+    public User getUserByUserName(String username) {
+        return users.get(username);
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        if (usernameAndPassword.containsKey(username)) {
-            String encodedPassword = getPassword(username);
-            return new org.springframework.security.core.userdetails.User(username, encodedPassword, Collections.emptyList());
+        if (users.containsKey(username)) {
+            User user = users.get(username);
+            return new org.springframework.security.core.userdetails.User(username, user.getEncryptedPassword(), Collections.emptyList());
         }
         throw new UsernameNotFoundException(username + "不存在");
     }

@@ -1,6 +1,7 @@
 package hello.controller;
 
 import hello.service.User;
+import hello.service.UserService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,9 +22,11 @@ import java.util.Map;
 public class AuthController {
     private UserDetailsService userDetailsService;
     private AuthenticationManager authenticationManager;
+    private UserService userService;
 
     @Inject
-    public AuthController(UserDetailsService userDetailsService, AuthenticationManager authenticationManager) {
+    public AuthController(UserService userService, UserDetailsService userDetailsService, AuthenticationManager authenticationManager) {
+        this.userService = userService;
         this.userDetailsService = userDetailsService;
         this.authenticationManager = authenticationManager;
     }
@@ -31,7 +34,12 @@ public class AuthController {
     @GetMapping("/auth")
     @ResponseBody
     public Object auth() {
-        return new Result("ok", "用户未登录", false);
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userService.getUserByUserName(username);
+        if (username.contains("anonymous")) {
+            return new Result("ok", "用户未登录", false);
+        }
+        return new Result("ok", "用户已登录", true, user);
     }
 
     @PostMapping("/auth/login")
@@ -53,9 +61,10 @@ public class AuthController {
         try {
             //输入密码与查询密码进行比对
             authenticationManager.authenticate(token);
+            //用户信息存储在cookie
             SecurityContextHolder.getContext().setAuthentication(token);
 
-            User loggedUser = new User(1, "张三");
+            User loggedUser = userService.getUserByUserName(username);
             System.out.println(loggedUser);
             return new Result("ok", "登录成功", true, loggedUser);
         } catch (BadCredentialsException e) {
