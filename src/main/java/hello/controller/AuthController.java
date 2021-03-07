@@ -44,7 +44,7 @@ public class AuthController {
 
     @PostMapping("/auth/login")
     @ResponseBody
-    public Result login(@RequestBody Map<String, String> usernameAndPasswordJson) { //???
+    public Result login(@RequestBody Map<String, String> usernameAndPasswordJson) {
         //1.从前台拿到输入的用户名密码
         String username = usernameAndPasswordJson.get("username");
         String password = usernameAndPasswordJson.get("password");
@@ -68,8 +68,47 @@ public class AuthController {
             System.out.println(loggedUser);
             return new Result("ok", "登录成功", true, loggedUser);
         } catch (BadCredentialsException e) {
-            //返回格式 {"status": "fail", "msg": "用户不存在"} 或者 {"status": "fail", "msg": "密码不正确"}
             return new Result("fail", "密码不正确", false);
+        }
+    }
+
+    @PostMapping("/auth/register")
+    @ResponseBody
+    public Result register(@RequestBody Map<String, String> usernameAndPasswordJson) {
+        String username = usernameAndPasswordJson.get("username");
+        String password = usernameAndPasswordJson.get("password");
+        if (meetUserCondition(username) && meetPasswordCondition(password)) {
+            User user = userService.getUserByUserName(username);
+            if (user == null) {
+                userService.save(username, password);
+                //修改时间！！！
+                User registerUser = userService.getUserByUserName(username);
+                return new Result("ok", "注册成功", false, registerUser);
+            } else {
+                return new Result("fail", "该用户已被注册", false);
+            }
+        }
+        return new Result("fail", "用户名或密码不符合要求", false);
+    }
+
+    private boolean meetPasswordCondition(String password) {
+        return password.length() >= 6 && password.length() <= 16;
+    }
+
+    private boolean meetUserCondition(String username) {
+        return username.length() >= 1 && username.length() <= 15;
+    }
+
+    @GetMapping("/auth/logout")
+    @ResponseBody
+    public Result logout() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userService.getUserByUserName(username);
+        if (currentUser == null) {
+            return new Result("fail", "用户尚未登录", false);
+        } else {
+            SecurityContextHolder.clearContext();
+            return new Result("ok", "注销成功", false);
         }
     }
 

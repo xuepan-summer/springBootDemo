@@ -1,9 +1,7 @@
 package hello.service;
 
 import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
+import hello.mapper.UserMapper;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -14,29 +12,31 @@ import javax.inject.Inject;
 
 @Service
 public class UserService implements UserDetailsService {
-    private Map<String, User> users = new ConcurrentHashMap<>();
     private BCryptPasswordEncoder bCryptPasswordEncoder;
+    private UserMapper userMapper;
 
     @Inject
-    public UserService(BCryptPasswordEncoder bCryptPasswordEncoder) {
+    public UserService(BCryptPasswordEncoder bCryptPasswordEncoder, UserMapper userMapper) {
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
-        save("张三", "zhangsan");
+        this.userMapper = userMapper;
+//        save("张三", "zhangsan");
     }
 
     public void save(String username, String password) {
-        users.put(username, new User(1, username, bCryptPasswordEncoder.encode(password)));
+        userMapper.save(username, bCryptPasswordEncoder.encode(password));
     }
 
     public User getUserByUserName(String username) {
-        return users.get(username);
+        return userMapper.findUserByUsername(username);
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        if (users.containsKey(username)) {
-            User user = users.get(username);
-            return new org.springframework.security.core.userdetails.User(username, user.getEncryptedPassword(), Collections.emptyList());
+        User user = getUserByUserName(username);
+        if (user == null) {
+            throw new UsernameNotFoundException(username + "不存在");
         }
-        throw new UsernameNotFoundException(username + "不存在");
+        return new org.springframework.security.core.userdetails.User(username, user.getEncryptedPassword(), Collections.emptyList());
     }
+
 }
